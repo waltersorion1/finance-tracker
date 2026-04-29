@@ -494,7 +494,24 @@ export function startApp() {
       <div class="mb-3"><label class="form-label">Bio</label><textarea class="form-control" name="bio" maxlength="280" rows="3">${esc(currentUser.bio)}</textarea></div>
       <div class="mb-3"><label class="form-label">Email</label><input class="form-control" type="email" value="${esc(currentUser.email)}" disabled></div>
       <div class="row g-3 mb-4"><div class="col-6"><label class="form-label">Language</label><select class="form-select" name="language"><option value="en">English</option><option value="fr">Francais</option></select></div><div class="col-6"><label class="form-label">Theme</label><select class="form-select" name="theme"><option value="light">Light</option><option value="dark">Dark</option></select></div></div>
-      <button class="btn btn-primary"><i class="bi bi-check-circle me-2"></i>Save Changes</button></form></div></div></div>`;
+      <button class="btn btn-primary"><i class="bi bi-check-circle me-2"></i>Save Changes</button></form>
+      <hr class="my-4">
+      <h5 class="fw-semibold mb-3"><i class="bi bi-shield-lock me-2 text-primary"></i>Security</h5>
+      <form data-form="password">
+        ${ui.passwordInput('currentPassword', 'Current password', 'current-password')}
+        ${ui.passwordInput('newPassword', 'New password', 'new-password')}
+        ${ui.passwordInput('confirmPassword', 'Confirm new password', 'new-password')}
+        <button class="btn btn-outline-primary"><i class="bi bi-key me-2"></i>Change Password</button>
+      </form>
+      <hr class="my-4">
+      <h5 class="fw-semibold mb-3"><i class="bi bi-database-down me-2 text-primary"></i>Data</h5>
+      <div class="d-flex gap-2 flex-wrap mb-4"><a class="btn btn-outline-secondary" href="/api/profile/export"><i class="bi bi-download me-2"></i>Export JSON</a></div>
+      <div class="border border-danger rounded p-3">
+        <h6 class="fw-semibold text-danger">Delete Account</h6>
+        <p class="text-muted small">This removes your user profile, accounts, goals, budgets, recurring templates, transactions, and audit logs.</p>
+        <form data-form="delete-account" class="d-flex gap-2 flex-wrap"><input class="form-control" name="confirm" placeholder="Type DELETE" autocomplete="off"><button class="btn btn-outline-danger">Delete Account</button></form>
+      </div>
+      </div></div></div>`;
     app.querySelector('[name="language"]').value = currentUser.language;
     app.querySelector('[name="theme"]').value = currentUser.theme;
   }
@@ -649,6 +666,18 @@ export function startApp() {
         setTheme(currentUser.theme);
         showAlert('Profile updated.');
         renderProfile();
+      }
+      if (name === 'password') {
+        await api('/api/profile/password', { method: 'PUT', body: JSON.stringify(formData(form)) });
+        form.reset();
+        showAlert('Password changed.');
+      }
+      if (name === 'delete-account') {
+        if (!confirm('This permanently deletes your finance tracker account and all financial data. Continue?')) return;
+        await api('/api/profile', { method: 'DELETE', body: JSON.stringify(formData(form)) });
+        currentUser = null;
+        showAlert('Account deleted.');
+        navigate('/register');
       }
     } catch (error) {
       showAlert(error.message, 'danger');

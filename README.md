@@ -8,6 +8,7 @@ The app is currently designed to run locally on a PC, with a production-friendly
 
 - Session-based authentication with local email/password login.
 - Optional Google OAuth support.
+- Password change, JSON export, and account deletion controls.
 - JSON API backend with a static JavaScript frontend.
 - No EJS rendering.
 - Strict CSP-friendly frontend with no inline JavaScript.
