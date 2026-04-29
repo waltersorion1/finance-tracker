@@ -9,9 +9,26 @@ export function startApp() {
   const app = document.getElementById('app');
   const alerts = document.getElementById('alerts');
   const navLinks = document.getElementById('navLinks');
+  const commandPalette = document.getElementById('commandPalette');
+  const commandSearch = document.getElementById('commandSearch');
+  const commandResults = document.getElementById('commandResults');
   let currentUser = null;
   let chartInstances = [];
   const ui = createComponents({ esc, money, getCurrentUser: () => currentUser });
+  const commands = [
+    { label: 'Dashboard', icon: 'bi-speedometer2', path: '/dashboard', auth: true },
+    { label: 'Add Income', icon: 'bi-plus-circle', path: '/transactions/new?type=Income', auth: true },
+    { label: 'Record Expense', icon: 'bi-dash-circle', path: '/transactions/new?type=Expense', auth: true },
+    { label: 'Transaction History', icon: 'bi-clock-history', path: '/transactions/history', auth: true },
+    { label: 'Goals', icon: 'bi-trophy', path: '/goals', auth: true },
+    { label: 'Budgets', icon: 'bi-cash-coin', path: '/budgets', auth: true },
+    { label: 'Recurring Transactions', icon: 'bi-arrow-repeat', path: '/recurring', auth: true },
+    { label: 'Monthly Review', icon: 'bi-clipboard-data', path: '/review', auth: true },
+    { label: 'Analytics', icon: 'bi-bar-chart-line', path: '/analytics', auth: true },
+    { label: 'Distribution Settings', icon: 'bi-sliders', path: '/settings/distribution', auth: true },
+    { label: 'Profile', icon: 'bi-person-circle', path: '/profile', auth: true },
+    { label: 'Sign In', icon: 'bi-box-arrow-in-right', path: '/login', auth: false },
+  ];
 
   const routes = {
     '/': renderHome,
@@ -125,6 +142,23 @@ export function startApp() {
       if (link.pathname === getPath()) link.classList.add('active');
     });
     syncThemeButtons();
+  }
+
+  function availableCommands() {
+    return commands.filter(command => (currentUser ? command.auth : !command.auth));
+  }
+
+  function renderCommands(query = '') {
+    const normalized = query.trim().toLowerCase();
+    const matches = availableCommands().filter(command => command.label.toLowerCase().includes(normalized));
+    commandResults.innerHTML = matches.map(command => `<button class="list-group-item command-item" type="button" data-action="command" data-path="${command.path}"><i class="bi ${command.icon} me-2"></i>${esc(command.label)}</button>`).join('') || '<p class="text-muted small mb-0 px-2">No matching actions.</p>';
+  }
+
+  function openCommandPalette() {
+    renderCommands();
+    const modal = bootstrap.Modal.getOrCreateInstance(commandPalette);
+    modal.show();
+    setTimeout(() => commandSearch.focus(), 150);
   }
 
   async function loadMe() {
@@ -498,6 +532,11 @@ export function startApp() {
       const inputEl = event.target.closest('.input-group').querySelector('input');
       inputEl.type = inputEl.type === 'password' ? 'text' : 'password';
     }
+    if (action === 'command') {
+      const path = event.target.closest('[data-path]').dataset.path;
+      bootstrap.Modal.getOrCreateInstance(commandPalette).hide();
+      navigate(path);
+    }
     if (action === 'set-category') {
       app.querySelector('[name="category"]').value = event.target.closest('[data-category]').dataset.category;
     }
@@ -538,6 +577,9 @@ export function startApp() {
   });
 
   document.addEventListener('input', event => {
+    if (event.target === commandSearch) {
+      renderCommands(commandSearch.value);
+    }
     if (event.target.matches('[data-distribution]')) {
       const mirror = document.querySelector(`[data-mirror="${event.target.name}"]`);
       if (mirror) mirror.value = event.target.value;
@@ -615,6 +657,13 @@ export function startApp() {
 
   document.addEventListener('click', event => {
     if (event.target.closest('.js-theme-toggle')) toggleTheme();
+  });
+
+  document.addEventListener('keydown', event => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+      event.preventDefault();
+      openCommandPalette();
+    }
   });
 
   interceptNavigation(render);

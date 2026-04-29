@@ -61,6 +61,21 @@
     </div>
   </div>
 
+  <div class="modal fade" id="commandPalette" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-command text-primary me-2"></i>Command Palette</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input class="form-control mb-3" id="commandSearch" type="search" placeholder="Search actions">
+          <div class="list-group list-group-flush" id="commandResults"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script src="/lib/chartjs/chart.umd.js"></script>
   <script type="module" src="/js/main.js"></script>

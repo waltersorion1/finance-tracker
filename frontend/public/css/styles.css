@@ -136,6 +136,8 @@ main { flex: 1; }
 .hero-title { font-size: clamp(2rem, 6vw, 4.25rem); font-weight: 800; line-height: .98; letter-spacing: 0; }
 .hero-copy { max-width: 620px; }
 .feature-icon { width: 46px; height: 46px; border-radius: .75rem; display: grid; place-items: center; background: rgba(14,165,233,.12); color: var(--primary); font-size: 1.4rem; }
+.command-item { border: 0; border-radius: .5rem; text-align: left; }
+.command-item:hover, .command-item:focus { background: var(--bg); color: var(--primary); }
 
 @media (max-width: 576px) {
   .stat-value { font-size: 1.2rem; }
