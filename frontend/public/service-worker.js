@@ -8,6 +8,7 @@ const STATIC_ASSETS = [
   '/js/app/charts.js',
   '/js/app/components.js',
   '/js/app/navigation.js',
+  '/js/app/views.js',
   '/js/app/root.js',
   '/js/core/dom.js',
   '/js/core/http.js',
