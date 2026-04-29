@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fintrack-static-v11';
+const CACHE_NAME = 'fintrack-static-v12';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -9,6 +9,7 @@ const STATIC_ASSETS = [
   '/js/app/components.js',
   '/js/app/navigation.js',
   '/js/app/pages/auth.js',
+  '/js/app/pages/transactions.js',
   '/js/app/views.js',
   '/js/app/root.js',
   '/js/core/dom.js',
