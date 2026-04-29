@@ -1,13 +1,12 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const Account = require('../../models/Account');
 const Transaction = require('../../models/Transaction');
 const { ensureAuth, wrap } = require('../../middleware/auth');
 const { serializeTransaction } = require('../../utils/serializers');
 const { toCents } = require('../../utils/money');
+const { recordTransaction } = require('../../services/transactions');
 
 const router = express.Router();
-const fallbackOrder = ['Wants', 'Emergency Funds', 'Investment Trust', 'Savings', 'Kids Funds'];
 
 router.use(ensureAuth);
 
@@ -47,65 +46,15 @@ router.post('/', [
 
   const { type, category, subcategory, account: accountId } = req.body;
   const amountCents = toCents(req.body.amount);
-  const userId = req.user._id;
-
-  if (type === 'Income') {
-    const accounts = await Account.find({ user: userId });
-    const totalPct = accounts.reduce((sum, account) => sum + (account.percentage || 0), 0);
-    let allocated = 0;
-    for (const [index, account] of accounts.entries()) {
-      const pct = totalPct > 0 ? (account.percentage || 0) / totalPct : 1 / accounts.length;
-      const share = index === accounts.length - 1 ? amountCents - allocated : Math.floor(amountCents * pct);
-      account.balanceCents += share;
-      allocated += share;
-      await account.save();
-    }
-    const tx = await Transaction.create({ user: userId, type, category, subcategory, amountCents, reflection: (req.body.reflection || '').trim().slice(0, 300) });
-    return res.status(201).json({ transaction: serializeTransaction(await tx.populate('account'), req.user.currency) });
-  }
-
-  const allAccounts = await Account.find({ user: userId });
-  const account = allAccounts.find(item => item._id.toString() === accountId);
-  if (!account) return res.status(404).json({ error: 'Account not found.' });
-  if (account.goalCents > 0 && account.balanceCents < account.goalCents) {
-    return res.status(422).json({ error: `"${account.name}" is locked until its goal is reached.` });
-  }
-
-  let remaining = amountCents;
-  let flag = null;
-  if (account.balanceCents >= remaining) {
-    if (remaining >= Math.floor(account.balanceCents * 0.1)) flag = 'high-spend';
-    account.balanceCents -= remaining;
-    await account.save();
-    remaining = 0;
-  } else {
-    remaining -= account.balanceCents;
-    account.balanceCents = 0;
-    await account.save();
-    flag = 'fallback-used';
-
-    for (const fallbackName of fallbackOrder) {
-      if (remaining <= 0) break;
-      const fallback = allAccounts.find(item => item.name === fallbackName && item._id.toString() !== accountId);
-      if (!fallback || fallback.balanceCents <= 0) continue;
-      const pull = Math.min(remaining, fallback.balanceCents);
-      fallback.balanceCents -= pull;
-      remaining -= pull;
-      await fallback.save();
-    }
-  }
-
-  if (remaining > 0) return res.status(422).json({ error: 'Insufficient funds across all accounts.' });
-
-  const tx = await Transaction.create({
-    user: userId,
+  const tx = await recordTransaction({
+    user: req.user,
     type,
     category,
     subcategory,
     amountCents,
-    account: account._id,
+    accountId,
     reflection: (req.body.reflection || '').trim().slice(0, 300),
-    flag,
+    isNecessary: req.body.isNecessary === '' || req.body.isNecessary == null ? null : req.body.isNecessary === 'true',
   });
   res.status(201).json({ transaction: serializeTransaction(await tx.populate('account'), req.user.currency) });
 }));

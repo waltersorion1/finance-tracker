@@ -21,6 +21,9 @@ export function startApp() {
     '/dashboard/goals': renderGoals,
     '/analytics': renderAnalytics,
     '/dashboard/analytics': renderAnalytics,
+    '/budgets': renderBudgets,
+    '/recurring': renderRecurring,
+    '/audit': renderAudit,
     '/profile': renderProfile,
     '/settings/distribution': renderDistribution,
   };
@@ -87,6 +90,8 @@ export function startApp() {
         <li class="nav-item"><a class="nav-link" href="/transactions/history" data-link><i class="bi bi-clock-history me-1"></i>History</a></li>
         <li class="nav-item"><a class="nav-link" href="/goals" data-link><i class="bi bi-trophy me-1 text-warning"></i>Goals</a></li>
         <li class="nav-item"><a class="nav-link" href="/analytics" data-link><i class="bi bi-bar-chart-line me-1"></i>Analytics</a></li>
+        <li class="nav-item"><a class="nav-link" href="/budgets" data-link><i class="bi bi-cash-coin me-1"></i>Budgets</a></li>
+        <li class="nav-item"><a class="nav-link" href="/recurring" data-link><i class="bi bi-arrow-repeat me-1"></i>Recurring</a></li>
         <li class="nav-item"><a class="nav-link" href="/settings/distribution" data-link><i class="bi bi-sliders me-1"></i>Split</a></li>
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" data-bs-toggle="dropdown">
@@ -94,6 +99,7 @@ export function startApp() {
           </a>
           <ul class="dropdown-menu dropdown-menu-end">
             <li><a class="dropdown-item" href="/profile" data-link><i class="bi bi-gear me-2"></i>Profile</a></li>
+            <li><a class="dropdown-item" href="/audit" data-link><i class="bi bi-shield-check me-2"></i>Audit Log</a></li>
             <li><a class="dropdown-item" href="/api/transactions/export.csv"><i class="bi bi-download me-2"></i>Export CSV</a></li>
             <li><hr class="dropdown-divider"></li>
             <li><button class="dropdown-item text-danger" type="button" data-action="logout"><i class="bi bi-box-arrow-right me-2"></i>Logout</button></li>
@@ -290,6 +296,7 @@ export function startApp() {
         <div class="d-flex flex-wrap gap-1 mb-3">${categories.map(category => `<button class="btn btn-sm btn-outline-secondary quick-cat" type="button" data-action="set-category" data-category="${esc(category)}">${esc(category)}</button>`).join('')}</div>
         ${input('subcategory', 'Subcategory', 'text', 'Optional', '', false)}
         ${type === 'Expense' ? `<div class="mb-3"><label class="form-label">Account <span class="text-danger">*</span></label><select class="form-select" name="account" required>${accounts.map(account => `<option value="${account.id}">${esc(account.name)} - ${money(account.balanceCents)}${account.goalCents > account.balanceCents ? ' (locked)' : ''}</option>`).join('')}</select></div>` : ''}
+        ${type === 'Expense' ? `<div class="mb-3"><label class="form-label">Necessity</label><select class="form-select" name="isNecessary"><option value="">Not sure</option><option value="true">Necessary</option><option value="false">Unnecessary</option></select></div>` : ''}
         ${input('amount', `Amount (${currentUser.currency})`, 'number', '0')}
         <div class="mb-4"><label class="form-label">Reflection</label><textarea class="form-control" name="reflection" rows="2" maxlength="300" placeholder="Was it necessary?"></textarea></div>
         <div class="d-flex gap-3"><a href="/dashboard" data-link class="btn btn-outline-secondary flex-fill">Cancel</a><button class="btn ${type === 'Income' ? 'btn-success' : 'btn-danger'} flex-fill fw-semibold" type="submit">${type === 'Income' ? 'Add Income' : 'Record Expense'}</button></div>
@@ -389,6 +396,67 @@ export function startApp() {
     chartInstances.push(new Chart(document.getElementById('catChart'), { type: 'doughnut', data: { labels: data.categories.labels.length ? data.categories.labels : ['No expenses'], datasets: [{ data: data.categories.data.length ? data.categories.data : [1], backgroundColor: ['#0ea5e9', '#10b981', '#ef4444', '#f59e0b', '#14b8a6', '#64748b'] }] }, options: { responsive: true, maintainAspectRatio: false } }));
   }
 
+  async function renderBudgets() {
+    pageTitle('Budgets');
+    const { budgets } = await api('/api/budgets');
+    app.innerHTML = `<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2"><h4 class="fw-bold mb-0"><i class="bi bi-cash-coin me-2 text-primary"></i>Budgets</h4><span class="text-muted small">${budgets.length} active category plan${budgets.length === 1 ? '' : 's'}</span></div>
+      <div class="row g-4"><div class="col-lg-7"><div class="row g-3">${budgets.map(budgetCard).join('') || empty('No budgets yet. Add your first category budget.')}</div></div>
+      <div class="col-lg-5"><div class="card p-4"><h5 class="fw-semibold mb-3">Add or Update Budget</h5><form data-form="budget">
+        ${input('category', 'Category', 'text', 'Food')}
+        ${input('limit', `Limit (${currentUser.currency})`, 'number', '0')}
+        <div class="mb-3"><label class="form-label">Period</label><select class="form-select" name="period"><option value="monthly">Monthly</option><option value="weekly">Weekly</option></select></div>
+        ${input('alertThreshold', 'Alert threshold (%)', 'number', '80')}
+        <button class="btn btn-primary"><i class="bi bi-plus-circle me-2"></i>Save Budget</button>
+      </form></div></div></div>`;
+  }
+
+  function budgetCard(budget) {
+    const pct = Math.min(budget.pct, 140);
+    return `<div class="col-12"><div class="card p-3">
+      <div class="d-flex justify-content-between align-items-start gap-3"><div><h5 class="fw-semibold mb-1">${esc(budget.category)}</h5><p class="text-muted small mb-0">${esc(budget.period)} budget · alert at ${budget.alertThreshold}%</p></div><button class="btn btn-sm btn-ghost text-danger" type="button" data-action="delete-budget" data-id="${budget.id}" title="Delete"><i class="bi bi-trash3"></i></button></div>
+      <div class="d-flex justify-content-between small text-muted mt-3"><span>${money(budget.spentCents)} spent</span><span>${money(budget.limitCents)} limit</span></div>
+      <progress class="w-100" max="100" value="${Math.min(pct, 100)}">${Math.min(pct, 100)}%</progress>
+      <p class="small mt-2 mb-0 ${budget.remainingCents < 0 ? 'text-danger' : 'text-muted'}">${budget.remainingCents < 0 ? `${money(Math.abs(budget.remainingCents))} over budget` : `${money(budget.remainingCents)} remaining`}</p>
+    </div></div>`;
+  }
+
+  async function renderRecurring() {
+    pageTitle('Recurring');
+    const [{ recurring }, { accounts }] = await Promise.all([api('/api/recurring'), api('/api/accounts')]);
+    app.innerHTML = `<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2"><h4 class="fw-bold mb-0"><i class="bi bi-arrow-repeat me-2 text-primary"></i>Recurring Transactions</h4><button class="btn btn-sm btn-outline-primary" type="button" data-action="run-recurring"><i class="bi bi-play-circle me-1"></i>Run Due Now</button></div>
+      <div class="row g-4"><div class="col-lg-7"><div class="row g-3">${recurring.map(recurringCard).join('') || empty('No recurring transactions yet.')}</div></div>
+      <div class="col-lg-5"><div class="card p-4"><h5 class="fw-semibold mb-3">Create Recurring Transaction</h5><form data-form="recurring">
+        <div class="mb-3"><label class="form-label">Type</label><select class="form-select" name="type"><option value="Expense">Expense</option><option value="Income">Income</option></select></div>
+        ${input('category', 'Category', 'text', 'Rent, Salary, Subscription')}
+        ${input('subcategory', 'Subcategory', 'text', 'Optional', '', false)}
+        ${input('amount', `Amount (${currentUser.currency})`, 'number', '0')}
+        <div class="mb-3"><label class="form-label">Account for expenses</label><select class="form-select" name="account">${accounts.map(account => `<option value="${account.id}">${esc(account.name)} - ${money(account.balanceCents)}</option>`).join('')}</select></div>
+        <div class="mb-3"><label class="form-label">Frequency</label><select class="form-select" name="frequency"><option value="monthly">Monthly</option><option value="weekly">Weekly</option><option value="daily">Daily</option></select></div>
+        ${input('nextRunAt', 'Next run date', 'date', '')}
+        <div class="mb-3"><label class="form-label">Reflection</label><textarea class="form-control" name="reflection" rows="2" maxlength="300"></textarea></div>
+        <button class="btn btn-primary"><i class="bi bi-plus-circle me-2"></i>Save Recurring</button>
+      </form></div></div></div>`;
+  }
+
+  function recurringCard(job) {
+    return `<div class="col-12"><div class="card p-3">
+      <div class="d-flex justify-content-between align-items-start gap-3"><div><h5 class="fw-semibold mb-1">${esc(job.category)}</h5><p class="text-muted small mb-0">${esc(job.frequency)} ${esc(job.type.toLowerCase())} · next ${new Date(job.nextRunAt).toLocaleDateString()}</p></div><button class="btn btn-sm btn-ghost text-danger" type="button" data-action="delete-recurring" data-id="${job.id}" title="Delete"><i class="bi bi-trash3"></i></button></div>
+      <p class="fs-5 fw-bold mb-1 mt-3 ${job.type === 'Income' ? 'text-success' : 'text-danger'}">${job.type === 'Income' ? '+' : '-'}${money(job.amountCents)}</p>
+      <p class="text-muted small mb-0">${job.account?.name ? `Account: ${esc(job.account.name)}` : 'Auto-distributed income'}</p>
+    </div></div>`;
+  }
+
+  async function renderAudit() {
+    pageTitle('Audit Log');
+    const { audit } = await api('/api/audit');
+    app.innerHTML = `<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2"><h4 class="fw-bold mb-0"><i class="bi bi-shield-check me-2 text-primary"></i>Audit Log</h4><span class="text-muted small">Latest ${audit.length} events</span></div>
+      <div class="card"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-header"><tr><th>Date</th><th>Action</th><th>Entity</th><th>Details</th></tr></thead><tbody>${audit.map(auditRow).join('') || '<tr><td colspan="4" class="text-muted text-center py-4">No audit activity yet.</td></tr>'}</tbody></table></div></div>`;
+  }
+
+  function auditRow(item) {
+    return `<tr><td class="text-muted small">${new Date(item.createdAt).toLocaleString()}</td><td><span class="badge bg-primary">${esc(item.action)}</span></td><td>${esc(item.entity)}</td><td class="text-muted small">${esc(JSON.stringify(item.metadata || {}))}</td></tr>`;
+  }
+
   function renderProfile() {
     pageTitle('Profile');
     app.innerHTML = `<div class="row justify-content-center"><div class="col-12 col-lg-7"><div class="card p-4 p-md-5"><h4 class="fw-bold mb-1"><i class="bi bi-person-circle me-2 text-primary"></i>Profile Settings</h4><p class="text-muted small mb-4">Update your personal details and local display preferences.</p>
@@ -453,6 +521,21 @@ export function startApp() {
       showAlert('Goal deleted.');
       renderGoals();
     }
+    if (action === 'delete-budget' && confirm('Delete this budget?')) {
+      await api(`/api/budgets/${event.target.closest('[data-id]').dataset.id}`, { method: 'DELETE' });
+      showAlert('Budget deleted.');
+      renderBudgets();
+    }
+    if (action === 'delete-recurring' && confirm('Delete this recurring transaction?')) {
+      await api(`/api/recurring/${event.target.closest('[data-id]').dataset.id}`, { method: 'DELETE' });
+      showAlert('Recurring transaction deleted.');
+      renderRecurring();
+    }
+    if (action === 'run-recurring') {
+      const result = await api('/api/recurring/run-due', { method: 'POST' });
+      showAlert(`${result.processed} recurring transaction${result.processed === 1 ? '' : 's'} processed.`);
+      renderRecurring();
+    }
     if (action === 'refresh-report') {
       showAlert('Daily report refreshed.');
       renderDashboard();
@@ -505,6 +588,16 @@ export function startApp() {
         await api('/api/goals', { method: 'POST', body: JSON.stringify(formData(form)) });
         showAlert('Goal added.');
         renderGoals();
+      }
+      if (name === 'budget') {
+        await api('/api/budgets', { method: 'POST', body: JSON.stringify(formData(form)) });
+        showAlert('Budget saved.');
+        renderBudgets();
+      }
+      if (name === 'recurring') {
+        await api('/api/recurring', { method: 'POST', body: JSON.stringify(formData(form)) });
+        showAlert('Recurring transaction saved.');
+        renderRecurring();
       }
       if (name === 'account-distribution' || name === 'goal-distribution') {
         const collectionName = name === 'account-distribution' ? 'accounts' : 'goals';

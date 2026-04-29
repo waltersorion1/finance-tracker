@@ -57,6 +57,7 @@ function serializeTransaction(tx, currency = 'XAF') {
     account: tx.account ? { id: tx.account._id.toString(), name: tx.account.name } : null,
     accountName: tx.account?.name || 'General',
     reflection: tx.reflection || '',
+    isNecessary: tx.isNecessary,
     flag: tx.flag || '',
     displayAmount: `${Math.round(tx.amountCents / 100).toLocaleString()} ${currency}`,
   };

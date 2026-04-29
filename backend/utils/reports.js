@@ -1,6 +1,8 @@
 const Account = require('../models/Account');
+const Budget = require('../models/Budget');
 const Transaction = require('../models/Transaction');
 const { fromCents } = require('./money');
+const { getPeriodBounds } = require('./periods');
 
 const discretionaryCategories = ['Entertainment', 'Shopping', 'Eating Out', 'Subscriptions', 'Gift', 'Travel'];
 
@@ -16,6 +18,7 @@ async function buildDailyReport(user) {
     Transaction.find({ user: user._id, date: { $gte: start, $lte: end } }).populate('account', 'name').lean(),
     Account.find({ user: user._id }).lean(),
   ]);
+  const budgets = await Budget.find({ user: user._id, active: true }).lean();
 
   const incomeCents = transactions.filter(tx => tx.type === 'Income').reduce((sum, tx) => sum + tx.amountCents, 0);
   const expenseTxs = transactions.filter(tx => tx.type === 'Expense');
@@ -53,6 +56,20 @@ async function buildDailyReport(user) {
   }
   if (lowAccounts.length) {
     advice.push(`${lowAccounts.map(account => account.name).join(', ')} ${lowAccounts.length === 1 ? 'is' : 'are'} running low.`);
+  }
+  for (const budget of budgets) {
+    const bounds = getPeriodBounds(budget.period);
+    const spent = await Transaction.aggregate([
+      { $match: { user: user._id, type: 'Expense', category: budget.category, date: { $gte: bounds.start, $lte: bounds.end } } },
+      { $group: { _id: null, total: { $sum: '$amountCents' } } },
+    ]);
+    const spentCents = spent[0]?.total || 0;
+    const pct = budget.limitCents > 0 ? Math.round((spentCents / budget.limitCents) * 100) : 0;
+    if (pct >= 100) {
+      advice.push(`${budget.category} is over its ${budget.period} budget by ${fromCents(spentCents - budget.limitCents).toLocaleString()} ${user.currency}.`);
+    } else if (pct >= budget.alertThreshold) {
+      advice.push(`${budget.category} has used ${pct}% of its ${budget.period} budget.`);
+    }
   }
   if (!advice.length) {
     advice.push('Your spending stayed balanced today. Keep tomorrow simple and intentional.');

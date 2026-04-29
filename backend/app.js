@@ -63,14 +63,23 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+function mountApi(prefix) {
+  app.use(`${prefix}/health`, require('./routes/api/health'));
+  app.use(`${prefix}/auth`, require('./routes/api/auth'));
+  app.use(`${prefix}/dashboard`, require('./routes/api/dashboard'));
+  app.use(`${prefix}/accounts`, require('./routes/api/accounts'));
+  app.use(`${prefix}/goals`, require('./routes/api/goals'));
+  app.use(`${prefix}/transactions`, require('./routes/api/transactions'));
+  app.use(`${prefix}/analytics`, require('./routes/api/analytics'));
+  app.use(`${prefix}/profile`, require('./routes/api/profile'));
+  app.use(`${prefix}/budgets`, require('./routes/api/budgets'));
+  app.use(`${prefix}/recurring`, require('./routes/api/recurring'));
+  app.use(`${prefix}/audit`, require('./routes/api/audit'));
+}
+
 app.use('/', require('./routes/oauth'));
-app.use('/api/auth', require('./routes/api/auth'));
-app.use('/api/dashboard', require('./routes/api/dashboard'));
-app.use('/api/accounts', require('./routes/api/accounts'));
-app.use('/api/goals', require('./routes/api/goals'));
-app.use('/api/transactions', require('./routes/api/transactions'));
-app.use('/api/analytics', require('./routes/api/analytics'));
-app.use('/api/profile', require('./routes/api/profile'));
+mountApi('/api');
+mountApi('/api/v1');
 
 app.use('/api', (req, res) => {
   res.status(404).json({ error: 'API endpoint not found' });
@@ -84,7 +93,7 @@ app.get('*', (req, res) => {
 app.use((err, req, res, next) => {
   console.error(err.stack || err);
   if (req.path.startsWith('/api')) {
-    return res.status(500).json({ error: 'Server error' });
+    return res.status(err.status || 500).json({ error: err.status ? err.message : 'Server error' });
   }
   return res.status(500).sendFile(path.join(publicDir, 'index.html'));
 });

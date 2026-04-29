@@ -14,6 +14,8 @@ The app is currently designed to run locally on a PC, with a production-friendly
 - Bootstrap, Bootstrap Icons, Chart.js, and app assets served locally for offline use.
 - Account income distribution with totals enforced at 100%.
 - User-managed savings goals with goal allocation totals enforced at 100%.
+- Category budgets with weekly or monthly limits.
+- Recurring income and expense templates.
 - Daily spending reports with warnings for overspending and discretionary purchases.
 - Analytics charts for income, expenses, categories, accounts, and goals.
 - PWA-ready static frontend with a service worker cache.
@@ -92,6 +94,42 @@ npm start
 ```
 
 Open:
+
+```text
+http://localhost:3000
+```
+
+Health check:
+
+```text
+http://localhost:3000/api/health
+```
+
+Versioned API routes are also available under `/api/v1`.
+
+## Quality Checks
+
+Run the test suite:
+
+```powershell
+npm test
+```
+
+Run syntax checks:
+
+```powershell
+npm run check:syntax
+```
+
+## Docker
+
+Run the app with MongoDB:
+
+```powershell
+docker compose up --build
+```
+
+The app will be available at:
 
 ```text
 http://localhost:3000

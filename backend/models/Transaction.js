@@ -8,6 +8,7 @@ const transactionSchema = new mongoose.Schema({
   amountCents: { type: Number, required: true, min: 1 },
   account:     { type: mongoose.Schema.Types.ObjectId, ref: 'Account' },
   reflection:  { type: String, trim: true },
+  isNecessary: { type: Boolean },
   flag:        { type: String, trim: true },
 }, { timestamps: true });
 transactionSchema.index({ user: 1, date: -1 });
