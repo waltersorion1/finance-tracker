@@ -1,21 +1,51 @@
 {
-  "name": "Finance Tracker",
-  "short_name": "FinanceApp",
+  "id": "/",
+  "name": "FinTrack",
+  "short_name": "FinTrack",
+  "description": "Offline-first personal expenditure tracker for income, expenses, budgets, goals, reports, and analytics.",
   "start_url": "/dashboard",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#198754",
-  "theme_color": "#198754",
-  "orientation": "portrait",
+  "display_override": ["window-controls-overlay", "standalone", "browser"],
+  "background_color": "#f8fafc",
+  "theme_color": "#0ea5e9",
+  "orientation": "portrait-primary",
+  "categories": ["finance", "productivity", "utilities"],
   "icons": [
     {
       "src": "/icons/icon-192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
       "src": "/icons/icon-512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add Income",
+      "short_name": "Income",
+      "description": "Record incoming money and distribute it across accounts.",
+      "url": "/transactions/new?type=Income",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Record Expense",
+      "short_name": "Expense",
+      "description": "Record spending from one of your accounts.",
+      "url": "/transactions/new?type=Expense",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Monthly Review",
+      "short_name": "Review",
+      "description": "Open your spending review and financial advice.",
+      "url": "/review",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
