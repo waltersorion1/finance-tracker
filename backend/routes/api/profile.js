@@ -37,6 +37,16 @@ router.put('/', [
   res.json({ user: serializeUser(user) });
 }));
 
+router.patch('/theme', [
+  body('theme').isIn(['light', 'dark']).withMessage('Invalid theme'),
+], wrap(async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(422).json({ errors: errors.array().map(error => error.msg) });
+
+  const user = await User.findByIdAndUpdate(req.user._id, { theme: req.body.theme }, { new: true });
+  res.json({ user: serializeUser(user) });
+}));
+
 router.put('/password', [
   body('currentPassword').notEmpty().withMessage('Current password is required'),
   body('newPassword').isLength({ min: 8 }).withMessage('New password must be at least 8 characters'),

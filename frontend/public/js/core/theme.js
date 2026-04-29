@@ -9,7 +9,9 @@ export function setTheme(theme) {
 }
 
 export function toggleTheme() {
-  setTheme(getTheme() === 'dark' ? 'light' : 'dark');
+  const nextTheme = getTheme() === 'dark' ? 'light' : 'dark';
+  setTheme(nextTheme);
+  return nextTheme;
 }
 
 export function syncThemeButtons() {
