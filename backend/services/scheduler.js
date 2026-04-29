@@ -17,7 +17,7 @@ async function processAllDueRecurringTransactions(now = new Date()) {
 
 function startRecurringScheduler({ intervalMs = DEFAULT_INTERVAL_MS } = {}) {
   if (process.env.DISABLE_RECURRING_SCHEDULER === 'true') {
-    console.log('Recurring scheduler disabled.');
+    console.log('⏱️ Recurring scheduler disabled by environment.');
     return null;
   }
 
@@ -25,10 +25,10 @@ function startRecurringScheduler({ intervalMs = DEFAULT_INTERVAL_MS } = {}) {
     try {
       const result = await processAllDueRecurringTransactions();
       if (result.processed > 0) {
-        console.log(`Recurring scheduler processed ${result.processed} transaction(s).`);
+        console.log(`⏱️ Recurring scheduler processed ${result.processed} transaction(s) across ${result.usersChecked} user(s).`);
       }
     } catch (err) {
-      console.error('Recurring scheduler error:', err.message);
+      console.error('⏱️ Recurring scheduler error:', err.message);
     }
   };
 
