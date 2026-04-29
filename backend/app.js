@@ -8,6 +8,7 @@ const path = require('path');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const sameOriginGuard = require('./middleware/sameOrigin');
 
 if (!process.env.SESSION_SECRET) {
   throw new Error('SESSION_SECRET env var is not set.');
@@ -62,6 +63,7 @@ app.use(session({
 
 app.use(passport.initialize());
 app.use(passport.session());
+app.use('/api', sameOriginGuard);
 
 function mountApi(prefix) {
   app.use(`${prefix}/health`, require('./routes/api/health'));

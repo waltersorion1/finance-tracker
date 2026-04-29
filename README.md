@@ -79,6 +79,8 @@ GOOGLE_CLIENT_SECRET=
 GOOGLE_CALLBACK_URL=http://localhost:3000/auth/google/callback
 ```
 
+For deployment, start from `.env.production.example`.
+
 ## Run
 
 Development mode:
@@ -135,6 +137,15 @@ The app will be available at:
 http://localhost:3000
 ```
 
+## Backups
+
+With MongoDB Database Tools installed and `MONGO_URI` set:
+
+```powershell
+npm run backup:mongo
+npm run restore:mongo
+```
+
 ## Goal Sync
 
 The current default personal goals are:
@@ -153,6 +164,7 @@ npm run sync:goals
 - `.env` is ignored and must not be committed.
 - Browser libraries are vendored locally under `frontend/public/lib`.
 - CSP is configured in `backend/app.js`.
+- Mutating API requests are protected by a same-origin guard.
 - Frontend behavior should stay in external ES modules under `frontend/public/js`.
 
 ## GitHub
