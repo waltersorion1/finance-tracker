@@ -11,7 +11,7 @@
     "dev": "nodemon server.js",
     "sync:goals": "node backend/scripts/syncPersonalGoals.js",
     "test": "node --test",
-    "check:syntax": "node -c frontend/public/js/main.js && node -c frontend/public/js/app/root.js && node -c backend/app.js && node -c backend/routes/api/budgets.js && node -c backend/routes/api/recurring.js && node -c backend/routes/api/audit.js"
+    "check:syntax": "node -c frontend/public/js/main.js && node -c frontend/public/js/app/root.js && node -c frontend/public/js/app/components.js && node -c frontend/public/js/app/charts.js && node -c backend/app.js && node -c backend/routes/api/budgets.js && node -c backend/routes/api/recurring.js && node -c backend/routes/api/audit.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

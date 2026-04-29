@@ -2,6 +2,8 @@ import { escapeHtml, formToObject, qsa } from '../core/dom.js';
 import { requestJson } from '../core/http.js';
 import { currentPath, interceptNavigation, navigate as goTo } from '../core/navigation.js';
 import { setTheme, syncThemeButtons, toggleTheme } from '../core/theme.js';
+import { renderFinanceCharts } from './charts.js';
+import { createComponents } from './components.js';
 
 export function startApp() {
   const app = document.getElementById('app');
@@ -9,6 +11,7 @@ export function startApp() {
   const navLinks = document.getElementById('navLinks');
   let currentUser = null;
   let chartInstances = [];
+  const ui = createComponents({ esc, money, getCurrentUser: () => currentUser });
 
   const routes = {
     '/': renderHome,
@@ -165,23 +168,19 @@ export function startApp() {
         </div>
       </section>
       <section class="row g-3">
-        ${feature('bi-pie-chart-fill', 'Smart Distribution', 'Income is split across your accounts by percentages you control.')}
-        ${feature('bi-trophy-fill', 'Flexible Goals', 'Add, delete, fund, and rebalance savings goals without editing code.')}
-        ${feature('bi-bar-chart-line-fill', 'Offline Analytics', 'Charts, reports, icons, and styling are all served locally.')}
+        ${ui.feature('bi-pie-chart-fill', 'Smart Distribution', 'Income is split across your accounts by percentages you control.')}
+        ${ui.feature('bi-trophy-fill', 'Flexible Goals', 'Add, delete, fund, and rebalance savings goals without editing code.')}
+        ${ui.feature('bi-bar-chart-line-fill', 'Offline Analytics', 'Charts, reports, icons, and styling are all served locally.')}
       </section>`;
-  }
-
-  function feature(icon, title, copy) {
-    return `<div class="col-md-4"><div class="card h-100 p-4"><div class="feature-icon mb-3"><i class="bi ${icon}"></i></div><h5>${title}</h5><p class="text-muted small mb-0">${copy}</p></div></div>`;
   }
 
   function renderLogin() {
     if (currentUser) return navigate('/dashboard');
     pageTitle('Sign In');
-    app.innerHTML = authShell('Welcome back', 'Sign in to your FinTrack account', `
+    app.innerHTML = ui.authShell('Welcome back', 'Sign in to your FinTrack account', `
       <form data-form="login">
-        ${input('email', 'Email address', 'email', 'you@example.com', 'email')}
-        ${passwordInput('password', 'Password', 'current-password')}
+        ${ui.input('email', 'Email address', 'email', 'you@example.com', 'email')}
+        ${ui.passwordInput('password', 'Password', 'current-password')}
         <button class="btn btn-primary w-100 py-2 fw-semibold" type="submit"><i class="bi bi-box-arrow-in-right me-2"></i>Sign In</button>
       </form>
       <div class="text-center my-3 text-muted small">or</div>
@@ -192,37 +191,22 @@ export function startApp() {
   function renderRegister() {
     if (currentUser) return navigate('/dashboard');
     pageTitle('Create Account');
-    app.innerHTML = authShell('Create your account', 'Start tracking your finances today', `
+    app.innerHTML = ui.authShell('Create your account', 'Start tracking your finances today', `
       <form data-form="register">
         <div class="row g-2">
-          <div class="col-md-6">${input('firstName', 'First name', 'text', 'First name', 'given-name')}</div>
-          <div class="col-md-6">${input('lastName', 'Last name', 'text', 'Last name', 'family-name')}</div>
+          <div class="col-md-6">${ui.input('firstName', 'First name', 'text', 'First name', 'given-name')}</div>
+          <div class="col-md-6">${ui.input('lastName', 'Last name', 'text', 'Last name', 'family-name')}</div>
         </div>
-        ${input('middleName', 'Middle name', 'text', 'Optional', 'additional-name', false)}
-        ${input('phoneNumber', 'Phone number', 'tel', 'Optional', 'tel', false)}
-        ${input('email', 'Email address', 'email', 'you@example.com', 'email')}
-        ${passwordInput('password', 'Password', 'new-password')}
-        ${passwordInput('confirmPassword', 'Confirm password', 'new-password')}
+        ${ui.input('middleName', 'Middle name', 'text', 'Optional', 'additional-name', false)}
+        ${ui.input('phoneNumber', 'Phone number', 'tel', 'Optional', 'tel', false)}
+        ${ui.input('email', 'Email address', 'email', 'you@example.com', 'email')}
+        ${ui.passwordInput('password', 'Password', 'new-password')}
+        ${ui.passwordInput('confirmPassword', 'Confirm password', 'new-password')}
         <button class="btn btn-primary w-100 py-2 fw-semibold" type="submit"><i class="bi bi-person-plus me-2"></i>Create Account</button>
       </form>
       <div class="text-center my-3 text-muted small">or</div>
       <a href="/auth/google" class="btn btn-outline-danger w-100 py-2"><i class="bi bi-google me-2"></i>Sign up with Google</a>
       <p class="text-center text-muted small mt-4 mb-0">Already registered? <a href="/login" data-link>Sign in</a></p>`);
-  }
-
-  function authShell(title, subtitle, body) {
-    return `<div class="auth-card card p-4 p-md-5 mt-4">
-      <div class="text-center mb-4"><i class="bi bi-graph-up-arrow fs-1 text-primary"></i><h2 class="fw-bold mt-2">${title}</h2><p class="text-muted small">${subtitle}</p></div>
-      ${body}
-    </div>`;
-  }
-
-  function input(name, label, type = 'text', placeholder = '', autocomplete = '', required = true, value = '') {
-    return `<div class="mb-3"><label class="form-label">${label}${required ? ' <span class="text-danger">*</span>' : ''}</label><input class="form-control" name="${name}" type="${type}" placeholder="${placeholder}" autocomplete="${autocomplete}" value="${esc(value)}" ${required ? 'required' : ''}></div>`;
-  }
-
-  function passwordInput(name, label, autocomplete) {
-    return `<div class="mb-3"><label class="form-label">${label} <span class="text-danger">*</span></label><div class="input-group"><input class="form-control" name="${name}" type="password" autocomplete="${autocomplete}" required><button class="btn btn-outline-secondary" type="button" data-action="toggle-password"><i class="bi bi-eye"></i></button></div></div>`;
   }
 
   async function renderDashboard() {
@@ -238,23 +222,19 @@ export function startApp() {
         </div>
       </div>
       <div class="row g-3 mb-4">
-        ${stat('Total Balance', money(data.totalBalanceCents), '', '')}
-        ${stat('Income This Month', money(data.monthlyIncomeCents), '', 'success')}
-        ${stat('Expenses This Month', money(data.monthlyExpenseCents), '', 'danger')}
-        ${stat('Savings Rate', `${data.savingsRate}%`, 'of income saved', 'accent')}
+        ${ui.stat('Total Balance', money(data.totalBalanceCents), '', '')}
+        ${ui.stat('Income This Month', money(data.monthlyIncomeCents), '', 'success')}
+        ${ui.stat('Expenses This Month', money(data.monthlyExpenseCents), '', 'danger')}
+        ${ui.stat('Savings Rate', `${data.savingsRate}%`, 'of income saved', 'accent')}
       </div>
       ${dailyReport(data.report)}
       <div class="d-flex justify-content-between align-items-center mb-3"><h5 class="fw-semibold mb-0"><i class="bi bi-wallet2 me-2 text-primary"></i>Your Accounts</h5><a href="/settings/distribution" data-link class="btn btn-sm btn-outline-secondary">Adjust Split</a></div>
       <div class="row g-3 mb-5">${data.accounts.map(accountCard).join('')}</div>
       <div class="d-flex justify-content-between align-items-center mb-3"><h5 class="fw-semibold mb-0"><i class="bi bi-trophy me-2 text-warning"></i>Goals Progress</h5><a href="/goals" data-link class="btn btn-sm btn-outline-secondary">Manage</a></div>
-      <div class="row g-3 mb-5">${data.goals.slice(0, 3).map(goalCard).join('') || empty('No goals yet.')}</div>
+      <div class="row g-3 mb-5">${data.goals.slice(0, 3).map(goalCard).join('') || ui.empty('No goals yet.')}</div>
       <div class="d-flex justify-content-between align-items-center mb-3"><h5 class="fw-semibold mb-0"><i class="bi bi-clock-history me-2 text-secondary"></i>Recent Transactions</h5><a href="/transactions/history" data-link class="btn btn-sm btn-outline-secondary">View All</a></div>
       ${transactionList(data.recentTransactions)}`;
     showMotivation();
-  }
-
-  function stat(label, value, suffix, tone) {
-    return `<div class="col-6 col-lg-3"><div class="card stat-card ${tone} p-3"><p class="stat-label">${label}</p><p class="stat-value">${value}</p><p class="stat-currency">${suffix || currentUser.currency}</p></div></div>`;
   }
 
   function dailyReport(report) {
@@ -275,12 +255,8 @@ export function startApp() {
   }
 
   function transactionList(transactions) {
-    if (!transactions.length) return empty('No transactions yet. Add your first income.');
+    if (!transactions.length) return ui.empty('No transactions yet. Add your first income.');
     return `<div class="card"><ul class="list-group list-group-flush">${transactions.map(tx => `<li class="list-group-item d-flex justify-content-between align-items-center py-3 gap-3"><div class="d-flex align-items-center gap-3"><div class="tx-icon ${tx.type.toLowerCase()}"><i class="bi ${tx.type === 'Income' ? 'bi-arrow-down-circle' : 'bi-arrow-up-circle'}"></i></div><div><p class="fw-medium mb-0 small">${esc(tx.category)}</p><p class="text-muted mb-0 small">${new Date(tx.date).toLocaleDateString()} · ${esc(tx.accountName)}</p></div></div><span class="fw-bold ${tx.type === 'Income' ? 'text-success' : 'text-danger'}">${tx.type === 'Income' ? '+' : '-'}${money(tx.amountCents)}</span></li>`).join('')}</ul></div>`;
-  }
-
-  function empty(text) {
-    return `<div class="col-12"><div class="card empty-state p-4"><div><i class="bi bi-inbox fs-2 d-block mb-2"></i>${esc(text)}</div></div></div>`;
   }
 
   async function renderTransactionForm() {
@@ -292,12 +268,12 @@ export function startApp() {
     app.innerHTML = `<div class="row justify-content-center"><div class="col-12 col-md-8 col-lg-6"><div class="card p-4 p-md-5">
       <div class="d-flex align-items-center gap-3 mb-4"><div class="tx-icon ${type.toLowerCase()} fs-4"><i class="bi ${type === 'Income' ? 'bi-plus-circle-fill' : 'bi-dash-circle-fill'}"></i></div><div><h4 class="fw-bold mb-0">${type === 'Income' ? 'Add Income' : 'Record Expense'}</h4><p class="text-muted small mb-0">${type === 'Income' ? 'Income will be auto-distributed.' : 'Funds will be deducted from the selected account.'}</p></div></div>
       <form data-form="transaction"><input name="type" type="hidden" value="${type}">
-        ${input('category', 'Category', 'text', 'Salary, rent, food...')}
+        ${ui.input('category', 'Category', 'text', 'Salary, rent, food...')}
         <div class="d-flex flex-wrap gap-1 mb-3">${categories.map(category => `<button class="btn btn-sm btn-outline-secondary quick-cat" type="button" data-action="set-category" data-category="${esc(category)}">${esc(category)}</button>`).join('')}</div>
-        ${input('subcategory', 'Subcategory', 'text', 'Optional', '', false)}
+        ${ui.input('subcategory', 'Subcategory', 'text', 'Optional', '', false)}
         ${type === 'Expense' ? `<div class="mb-3"><label class="form-label">Account <span class="text-danger">*</span></label><select class="form-select" name="account" required>${accounts.map(account => `<option value="${account.id}">${esc(account.name)} - ${money(account.balanceCents)}${account.goalCents > account.balanceCents ? ' (locked)' : ''}</option>`).join('')}</select></div>` : ''}
         ${type === 'Expense' ? `<div class="mb-3"><label class="form-label">Necessity</label><select class="form-select" name="isNecessary"><option value="">Not sure</option><option value="true">Necessary</option><option value="false">Unnecessary</option></select></div>` : ''}
-        ${input('amount', `Amount (${currentUser.currency})`, 'number', '0')}
+        ${ui.input('amount', `Amount (${currentUser.currency})`, 'number', '0')}
         <div class="mb-4"><label class="form-label">Reflection</label><textarea class="form-control" name="reflection" rows="2" maxlength="300" placeholder="Was it necessary?"></textarea></div>
         <div class="d-flex gap-3"><a href="/dashboard" data-link class="btn btn-outline-secondary flex-fill">Cancel</a><button class="btn ${type === 'Income' ? 'btn-success' : 'btn-danger'} flex-fill fw-semibold" type="submit">${type === 'Income' ? 'Add Income' : 'Record Expense'}</button></div>
       </form>
@@ -312,9 +288,9 @@ export function startApp() {
     app.innerHTML = `<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2"><h4 class="fw-bold mb-0"><i class="bi bi-clock-history me-2"></i>Transaction History</h4><a href="/api/transactions/export.csv" class="btn btn-sm btn-outline-secondary"><i class="bi bi-download me-1"></i>Export CSV</a></div>
       <div class="card p-3 mb-4"><form class="row g-2 align-items-end" data-form="filters">
         <div class="col-6 col-md-2"><label class="form-label small mb-1">Type</label><select name="type" class="form-select form-select-sm"><option value="">All</option><option value="Income">Income</option><option value="Expense">Expense</option></select></div>
-        <div class="col-6 col-md-3">${input('category', 'Category', 'text', 'Filter', '', false, params.get('category') || '')}</div>
-        <div class="col-6 col-md-3">${input('from', 'From', 'date', '', '', false, params.get('from') || '')}</div>
-        <div class="col-6 col-md-3">${input('to', 'To', 'date', '', '', false, params.get('to') || '')}</div>
+        <div class="col-6 col-md-3">${ui.input('category', 'Category', 'text', 'Filter', '', false, params.get('category') || '')}</div>
+        <div class="col-6 col-md-3">${ui.input('from', 'From', 'date', '', '', false, params.get('from') || '')}</div>
+        <div class="col-6 col-md-3">${ui.input('to', 'To', 'date', '', '', false, params.get('to') || '')}</div>
         <div class="col-12 col-md-1"><button class="btn btn-primary btn-sm w-100">Go</button></div>
       </form></div>
       ${historyTable(data.transactions)}
@@ -341,14 +317,10 @@ export function startApp() {
     const { goals } = await api('/api/goals');
     const total = goals.reduce((sum, goal) => sum + (goal.percentage || 0), 0);
     app.innerHTML = `<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2"><h4 class="fw-bold mb-0"><i class="bi bi-trophy me-2 text-warning"></i>Savings Goals</h4><span class="badge ${total === 100 || goals.length === 0 ? 'bg-success' : 'bg-warning text-dark'}">Allocation ${total}%</span></div>
-      <div class="row g-4 mb-4">${goals.map(goalListCard).join('') || empty('No goals yet.')}</div>
-      <div class="row g-4"><div class="col-lg-6"><div class="card p-4"><h5>Add Goal</h5><form data-form="goal">${input('name', 'Goal name', 'text', 'Emergency laptop fund')}${input('target', `Target (${currentUser.currency})`, 'number', '0')}${input('percentage', 'Goal allocation percentage', 'number', '0')}<div class="mb-3"><label class="form-label">Priority</label><select class="form-select" name="priority"><option value="medium">Medium</option><option value="high">High</option><option value="low">Low</option></select></div><button class="btn btn-primary">Add Goal</button></form></div></div>
-      <div class="col-lg-6"><div class="card p-4"><h5>Adjust Goal Allocation</h5><form data-form="goal-distribution">${goals.map(goal => distributionRow(goal)).join('') || '<p class="text-muted mb-0">Add goals before setting allocation.</p>'}<div class="d-flex justify-content-between mt-3"><strong>Total</strong><strong data-total="goals">0%</strong></div><button class="btn btn-outline-primary mt-3" ${goals.length ? '' : 'disabled'}>Save Allocation</button></form></div></div></div>`;
+      <div class="row g-4 mb-4">${goals.map(goalListCard).join('') || ui.empty('No goals yet.')}</div>
+      <div class="row g-4"><div class="col-lg-6"><div class="card p-4"><h5>Add Goal</h5><form data-form="goal">${ui.input('name', 'Goal name', 'text', 'Emergency laptop fund')}${ui.input('target', `Target (${currentUser.currency})`, 'number', '0')}${ui.input('percentage', 'Goal allocation percentage', 'number', '0')}<div class="mb-3"><label class="form-label">Priority</label><select class="form-select" name="priority"><option value="medium">Medium</option><option value="high">High</option><option value="low">Low</option></select></div><button class="btn btn-primary">Add Goal</button></form></div></div>
+      <div class="col-lg-6"><div class="card p-4"><h5>Adjust Goal Allocation</h5><form data-form="goal-distribution">${goals.map(goal => ui.distributionRow(goal)).join('') || '<p class="text-muted mb-0">Add goals before setting allocation.</p>'}<div class="d-flex justify-content-between mt-3"><strong>Total</strong><strong data-total="goals">0%</strong></div><button class="btn btn-outline-primary mt-3" ${goals.length ? '' : 'disabled'}>Save Allocation</button></form></div></div></div>`;
     updateDistributionTotals();
-  }
-
-  function distributionRow(item) {
-    return `<div class="distribution-row mb-2"><label class="small fw-medium">${esc(item.name)}</label><input class="form-range" type="range" min="0" max="100" step="1" name="${item.id}" value="${item.percentage || 0}" data-distribution><input class="form-control form-control-sm" type="number" min="0" max="100" step="1" value="${item.percentage || 0}" data-mirror="${item.id}"></div>`;
   }
 
   function goalListCard(goal) {
@@ -365,8 +337,8 @@ export function startApp() {
     pageTitle('Distribution');
     const [{ accounts }, { goals }] = await Promise.all([api('/api/accounts'), api('/api/goals')]);
     app.innerHTML = `<div class="mb-4"><h4 class="fw-bold mb-1"><i class="bi bi-sliders me-2 text-primary"></i>Distribution Settings</h4><p class="text-muted small mb-0">Both account and goal allocations must total exactly 100%.</p></div>
-      <div class="row g-4"><div class="col-lg-6"><div class="card p-4"><h5>Income Split Between Accounts</h5><form data-form="account-distribution">${accounts.map(distributionRow).join('')}<div class="d-flex justify-content-between mt-3"><strong>Total</strong><strong data-total="accounts">0%</strong></div><button class="btn btn-primary mt-3">Save Account Split</button></form></div></div>
-      <div class="col-lg-6"><div class="card p-4"><h5>Allocation Between Goals</h5><form data-form="goal-distribution">${goals.map(distributionRow).join('') || '<p class="text-muted mb-0">No goals yet.</p>'}<div class="d-flex justify-content-between mt-3"><strong>Total</strong><strong data-total="goals">0%</strong></div><button class="btn btn-outline-primary mt-3" ${goals.length ? '' : 'disabled'}>Save Goal Split</button></form></div></div></div>`;
+      <div class="row g-4"><div class="col-lg-6"><div class="card p-4"><h5>Income Split Between Accounts</h5><form data-form="account-distribution">${accounts.map(ui.distributionRow).join('')}<div class="d-flex justify-content-between mt-3"><strong>Total</strong><strong data-total="accounts">0%</strong></div><button class="btn btn-primary mt-3">Save Account Split</button></form></div></div>
+      <div class="col-lg-6"><div class="card p-4"><h5>Allocation Between Goals</h5><form data-form="goal-distribution">${goals.map(ui.distributionRow).join('') || '<p class="text-muted mb-0">No goals yet.</p>'}<div class="d-flex justify-content-between mt-3"><strong>Total</strong><strong data-total="goals">0%</strong></div><button class="btn btn-outline-primary mt-3" ${goals.length ? '' : 'disabled'}>Save Goal Split</button></form></div></div></div>`;
     updateDistributionTotals();
   }
 
@@ -378,34 +350,19 @@ export function startApp() {
       <div class="col-12 col-lg-4"><div class="card p-4 chart-box"><h6 class="fw-semibold text-muted text-uppercase small">Expense Categories</h6><canvas id="catChart"></canvas></div></div>
       <div class="col-12 col-lg-6"><div class="card p-4 chart-box"><h6 class="fw-semibold text-muted text-uppercase small">Weekly Activity</h6><canvas id="weeklyChart"></canvas></div></div>
       <div class="col-12 col-lg-6"><div class="card p-4 chart-box"><h6 class="fw-semibold text-muted text-uppercase small">Account Balances</h6><canvas id="accountChart"></canvas></div></div></div>`;
-    renderCharts(data);
-  }
-
-  function chartOptions() {
-    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-    const color = isDark ? '#9ca3af' : '#64748b';
-    const grid = isDark ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.06)';
-    return { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color } } }, scales: { x: { ticks: { color }, grid: { color: grid } }, y: { beginAtZero: true, ticks: { color }, grid: { color: grid } } } };
-  }
-
-  function renderCharts(data) {
-    const opts = chartOptions();
-    chartInstances.push(new Chart(document.getElementById('monthlyChart'), { type: 'bar', data: { labels: data.monthly.labels, datasets: [{ label: 'Income', data: data.monthly.incomeData, backgroundColor: 'rgba(16,185,129,.75)' }, { label: 'Expenses', data: data.monthly.expenseData, backgroundColor: 'rgba(239,68,68,.75)' }] }, options: opts }));
-    chartInstances.push(new Chart(document.getElementById('weeklyChart'), { type: 'line', data: { labels: data.weekly.labels, datasets: [{ label: 'Income', data: data.weekly.incomeData, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,.1)', fill: true }, { label: 'Expenses', data: data.weekly.expenseData, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,.1)', fill: true }] }, options: opts }));
-    chartInstances.push(new Chart(document.getElementById('accountChart'), { type: 'bar', data: { labels: data.accounts.labels, datasets: [{ label: 'Balance', data: data.accounts.data, backgroundColor: 'rgba(14,165,233,.75)' }] }, options: { ...opts, indexAxis: 'y' } }));
-    chartInstances.push(new Chart(document.getElementById('catChart'), { type: 'doughnut', data: { labels: data.categories.labels.length ? data.categories.labels : ['No expenses'], datasets: [{ data: data.categories.data.length ? data.categories.data : [1], backgroundColor: ['#0ea5e9', '#10b981', '#ef4444', '#f59e0b', '#14b8a6', '#64748b'] }] }, options: { responsive: true, maintainAspectRatio: false } }));
+    chartInstances = renderFinanceCharts(data);
   }
 
   async function renderBudgets() {
     pageTitle('Budgets');
     const { budgets } = await api('/api/budgets');
     app.innerHTML = `<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2"><h4 class="fw-bold mb-0"><i class="bi bi-cash-coin me-2 text-primary"></i>Budgets</h4><span class="text-muted small">${budgets.length} active category plan${budgets.length === 1 ? '' : 's'}</span></div>
-      <div class="row g-4"><div class="col-lg-7"><div class="row g-3">${budgets.map(budgetCard).join('') || empty('No budgets yet. Add your first category budget.')}</div></div>
+      <div class="row g-4"><div class="col-lg-7"><div class="row g-3">${budgets.map(budgetCard).join('') || ui.empty('No budgets yet. Add your first category budget.')}</div></div>
       <div class="col-lg-5"><div class="card p-4"><h5 class="fw-semibold mb-3">Add or Update Budget</h5><form data-form="budget">
-        ${input('category', 'Category', 'text', 'Food')}
-        ${input('limit', `Limit (${currentUser.currency})`, 'number', '0')}
+        ${ui.input('category', 'Category', 'text', 'Food')}
+        ${ui.input('limit', `Limit (${currentUser.currency})`, 'number', '0')}
         <div class="mb-3"><label class="form-label">Period</label><select class="form-select" name="period"><option value="monthly">Monthly</option><option value="weekly">Weekly</option></select></div>
-        ${input('alertThreshold', 'Alert threshold (%)', 'number', '80')}
+        ${ui.input('alertThreshold', 'Alert threshold (%)', 'number', '80')}
         <button class="btn btn-primary"><i class="bi bi-plus-circle me-2"></i>Save Budget</button>
       </form></div></div></div>`;
   }
@@ -424,15 +381,15 @@ export function startApp() {
     pageTitle('Recurring');
     const [{ recurring }, { accounts }] = await Promise.all([api('/api/recurring'), api('/api/accounts')]);
     app.innerHTML = `<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2"><h4 class="fw-bold mb-0"><i class="bi bi-arrow-repeat me-2 text-primary"></i>Recurring Transactions</h4><button class="btn btn-sm btn-outline-primary" type="button" data-action="run-recurring"><i class="bi bi-play-circle me-1"></i>Run Due Now</button></div>
-      <div class="row g-4"><div class="col-lg-7"><div class="row g-3">${recurring.map(recurringCard).join('') || empty('No recurring transactions yet.')}</div></div>
+      <div class="row g-4"><div class="col-lg-7"><div class="row g-3">${recurring.map(recurringCard).join('') || ui.empty('No recurring transactions yet.')}</div></div>
       <div class="col-lg-5"><div class="card p-4"><h5 class="fw-semibold mb-3">Create Recurring Transaction</h5><form data-form="recurring">
         <div class="mb-3"><label class="form-label">Type</label><select class="form-select" name="type"><option value="Expense">Expense</option><option value="Income">Income</option></select></div>
-        ${input('category', 'Category', 'text', 'Rent, Salary, Subscription')}
-        ${input('subcategory', 'Subcategory', 'text', 'Optional', '', false)}
-        ${input('amount', `Amount (${currentUser.currency})`, 'number', '0')}
+        ${ui.input('category', 'Category', 'text', 'Rent, Salary, Subscription')}
+        ${ui.input('subcategory', 'Subcategory', 'text', 'Optional', '', false)}
+        ${ui.input('amount', `Amount (${currentUser.currency})`, 'number', '0')}
         <div class="mb-3"><label class="form-label">Account for expenses</label><select class="form-select" name="account">${accounts.map(account => `<option value="${account.id}">${esc(account.name)} - ${money(account.balanceCents)}</option>`).join('')}</select></div>
         <div class="mb-3"><label class="form-label">Frequency</label><select class="form-select" name="frequency"><option value="monthly">Monthly</option><option value="weekly">Weekly</option><option value="daily">Daily</option></select></div>
-        ${input('nextRunAt', 'Next run date', 'date', '')}
+        ${ui.input('nextRunAt', 'Next run date', 'date', '')}
         <div class="mb-3"><label class="form-label">Reflection</label><textarea class="form-control" name="reflection" rows="2" maxlength="300"></textarea></div>
         <button class="btn btn-primary"><i class="bi bi-plus-circle me-2"></i>Save Recurring</button>
       </form></div></div></div>`;
@@ -460,8 +417,8 @@ export function startApp() {
   function renderProfile() {
     pageTitle('Profile');
     app.innerHTML = `<div class="row justify-content-center"><div class="col-12 col-lg-7"><div class="card p-4 p-md-5"><h4 class="fw-bold mb-1"><i class="bi bi-person-circle me-2 text-primary"></i>Profile Settings</h4><p class="text-muted small mb-4">Update your personal details and local display preferences.</p>
-      <form data-form="profile"><div class="row g-2"><div class="col-md-6">${input('firstName', 'First name', 'text', '', 'given-name', true, currentUser.firstName)}</div><div class="col-md-6">${input('lastName', 'Last name', 'text', '', 'family-name', true, currentUser.lastName)}</div></div>
-      ${input('middleName', 'Middle name', 'text', '', 'additional-name', false, currentUser.middleName)}${input('phoneNumber', 'Phone number', 'tel', '', 'tel', false, currentUser.phoneNumber)}${input('profilePicture', 'Profile picture URL or local path', 'text', '/icons/logo.png', '', false, currentUser.profilePicture)}
+      <form data-form="profile"><div class="row g-2"><div class="col-md-6">${ui.input('firstName', 'First name', 'text', '', 'given-name', true, currentUser.firstName)}</div><div class="col-md-6">${ui.input('lastName', 'Last name', 'text', '', 'family-name', true, currentUser.lastName)}</div></div>
+      ${ui.input('middleName', 'Middle name', 'text', '', 'additional-name', false, currentUser.middleName)}${ui.input('phoneNumber', 'Phone number', 'tel', '', 'tel', false, currentUser.phoneNumber)}${ui.input('profilePicture', 'Profile picture URL or local path', 'text', '/icons/logo.png', '', false, currentUser.profilePicture)}
       <div class="mb-3"><label class="form-label">Bio</label><textarea class="form-control" name="bio" maxlength="280" rows="3">${esc(currentUser.bio)}</textarea></div>
       <div class="mb-3"><label class="form-label">Email</label><input class="form-control" type="email" value="${esc(currentUser.email)}" disabled></div>
       <div class="row g-3 mb-4"><div class="col-6"><label class="form-label">Language</label><select class="form-select" name="language"><option value="en">English</option><option value="fr">Francais</option></select></div><div class="col-6"><label class="form-label">Theme</label><select class="form-select" name="theme"><option value="light">Light</option><option value="dark">Dark</option></select></div></div>
@@ -626,3 +583,5 @@ export function startApp() {
 
   render();
 }
+
+
