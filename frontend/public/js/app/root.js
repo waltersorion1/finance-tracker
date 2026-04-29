@@ -149,7 +149,13 @@ export function startApp() {
     }
     const cleanPath = getPath();
     const handler = routes[cleanPath] || renderHome;
-    handler();
+    try {
+      await handler();
+    } catch (error) {
+      if (error.status === 401) return;
+      showAlert(error.message || 'Unable to load this page.', 'danger');
+      app.innerHTML = `<div class="card empty-state p-5"><div><i class="bi bi-exclamation-triangle fs-2 d-block mb-2 text-warning"></i><p class="fw-semibold mb-1">Page could not load</p><p class="text-muted small mb-0">${esc(error.message || 'Please try again.')}</p></div></div>`;
+    }
   }
 
   function renderHome() {
