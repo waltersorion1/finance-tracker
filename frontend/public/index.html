@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Personal finance tracker for income, expenses, savings goals, reports, and analytics.">
+  <title>FinTrack</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0ea5e9">
+  <link rel="icon" href="/icons/favicon.png">
+  <link rel="stylesheet" href="/lib/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/lib/bootstrap-icons/css/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg sticky-top shadow-sm">
+    <div class="container">
+      <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="/" data-link>
+        <i class="bi bi-graph-up-arrow text-primary"></i>
+        <span>FinTrack</span>
+      </a>
+      <div class="d-flex align-items-center gap-2 d-lg-none">
+        <button class="btn btn-sm btn-ghost p-1 js-theme-toggle" type="button" title="Toggle theme">
+          <i class="bi bi-moon-fill"></i>
+        </button>
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+      </div>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto align-items-lg-center gap-1" id="navLinks"></ul>
+      </div>
+    </div>
+  </nav>
+
+  <main class="py-4">
+    <div class="container">
+      <div id="alerts" class="alerts-stack"></div>
+      <div id="app" aria-live="polite"></div>
+    </div>
+  </main>
+
+  <footer class="footer py-3">
+    <div class="container d-flex justify-content-between align-items-center flex-wrap gap-2 small text-muted">
+      <span>FinTrack</span>
+      <span>Offline-first local expenditure tracking</span>
+    </div>
+  </footer>
+
+  <div class="modal fade" id="motivationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-stars text-warning me-2"></i>Today&apos;s money note</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="lead mb-0" id="motivationText"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="/lib/chartjs/chart.umd.js"></script>
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>
