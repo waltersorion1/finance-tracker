@@ -26,6 +26,7 @@ export function startApp() {
     '/dashboard/analytics': renderAnalytics,
     '/budgets': renderBudgets,
     '/recurring': renderRecurring,
+    '/review': renderReview,
     '/audit': renderAudit,
     '/profile': renderProfile,
     '/settings/distribution': renderDistribution,
@@ -95,6 +96,7 @@ export function startApp() {
         <li class="nav-item"><a class="nav-link" href="/analytics" data-link><i class="bi bi-bar-chart-line me-1"></i>Analytics</a></li>
         <li class="nav-item"><a class="nav-link" href="/budgets" data-link><i class="bi bi-cash-coin me-1"></i>Budgets</a></li>
         <li class="nav-item"><a class="nav-link" href="/recurring" data-link><i class="bi bi-arrow-repeat me-1"></i>Recurring</a></li>
+        <li class="nav-item"><a class="nav-link" href="/review" data-link><i class="bi bi-clipboard-data me-1"></i>Review</a></li>
         <li class="nav-item"><a class="nav-link" href="/settings/distribution" data-link><i class="bi bi-sliders me-1"></i>Split</a></li>
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" data-bs-toggle="dropdown">
@@ -257,7 +259,8 @@ export function startApp() {
   }
 
   function goalCard(goal) {
-    return `<div class="col-12 col-md-4"><div class="card p-3 h-100"><div class="d-flex justify-content-between gap-2"><h6 class="fw-semibold mb-1">${esc(goal.name)}</h6><span class="badge ${goal.pct >= 100 ? 'bg-success' : 'bg-warning text-dark'}">${goal.pct}%</span></div><p class="text-muted small mb-2">${money(goal.balanceCents)} / ${money(goal.targetCents)}</p><progress class="w-100" max="100" value="${goal.pct}">${goal.pct}%</progress><p class="text-muted small mt-2 mb-0">${goal.percentage}% of goal allocation</p></div></div>`;
+    const eta = goal.estimatedMonths == null ? 'ETA needs income data' : goal.estimatedMonths === 0 ? 'Ready now' : `${goal.estimatedMonths} month${goal.estimatedMonths === 1 ? '' : 's'} at current split`;
+    return `<div class="col-12 col-md-4"><div class="card p-3 h-100"><div class="d-flex justify-content-between gap-2"><h6 class="fw-semibold mb-1">${esc(goal.name)}</h6><span class="badge ${goal.pct >= 100 ? 'bg-success' : 'bg-warning text-dark'}">${goal.pct}%</span></div><p class="text-muted small mb-2">${money(goal.balanceCents)} / ${money(goal.targetCents)}</p><progress class="w-100" max="100" value="${goal.pct}">${goal.pct}%</progress><p class="text-muted small mt-2 mb-0">${goal.percentage}% goal allocation · ${esc(eta)}</p></div></div>`;
   }
 
   function transactionList(transactions) {
@@ -330,11 +333,12 @@ export function startApp() {
   }
 
   function goalListCard(goal) {
+    const eta = goal.estimatedMonths == null ? 'ETA needs income data' : goal.estimatedMonths === 0 ? 'Ready now' : `${goal.estimatedMonths} month${goal.estimatedMonths === 1 ? '' : 's'} at current split`;
     return `<div class="col-12 col-md-6 col-xl-4"><div class="card h-100 p-4">
       <div class="d-flex justify-content-between align-items-start gap-2 mb-2"><h5 class="fw-semibold mb-0">${esc(goal.name)}</h5><span class="badge ${goal.pct >= 100 ? 'bg-success' : 'bg-warning text-dark'}">${goal.pct}%</span></div>
       <p class="text-muted small mb-2">${money(goal.balanceCents)} saved of ${money(goal.targetCents)}</p>
       <progress class="w-100" max="100" value="${goal.pct}">${goal.pct}%</progress>
-      <p class="text-muted small mt-2 mb-0">${goal.percentage}% allocation · ${esc(goal.priority)} priority</p>
+      <p class="text-muted small mt-2 mb-0">${goal.percentage}% allocation · ${esc(goal.priority)} priority · ${esc(eta)}</p>
       <button class="btn btn-sm btn-outline-danger mt-3" type="button" data-action="delete-goal" data-id="${goal.id}"><i class="bi bi-trash3 me-1"></i>Delete</button>
     </div></div>`;
   }
@@ -407,6 +411,34 @@ export function startApp() {
       <p class="fs-5 fw-bold mb-1 mt-3 ${job.type === 'Income' ? 'text-success' : 'text-danger'}">${job.type === 'Income' ? '+' : '-'}${money(job.amountCents)}</p>
       <p class="text-muted small mb-0">${job.account?.name ? `Account: ${esc(job.account.name)}` : 'Auto-distributed income'}</p>
     </div></div>`;
+  }
+
+  async function renderReview() {
+    pageTitle('Monthly Review');
+    const { review } = await api('/api/reviews/monthly');
+    app.innerHTML = `<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2"><h4 class="fw-bold mb-0"><i class="bi bi-clipboard-data me-2 text-primary"></i>Monthly Review</h4><span class="text-muted small">${esc(review.month)}</span></div>
+      <div class="row g-3 mb-4">
+        ${ui.stat('Income', money(review.incomeCents), '', 'success')}
+        ${ui.stat('Expenses', money(review.expenseCents), '', 'danger')}
+        ${ui.stat('Net', money(review.netCents), '', review.netCents >= 0 ? 'accent' : 'danger')}
+        ${ui.stat('Savings Rate', `${review.savingsRate}%`, `${review.transactionCount} transactions`, 'accent')}
+      </div>
+      <div class="row g-4">
+        <div class="col-lg-6"><div class="card p-4 h-100"><h5 class="fw-semibold mb-3">Advice</h5><ul class="mb-0">${review.advice.map(item => `<li>${esc(item)}</li>`).join('')}</ul></div></div>
+        <div class="col-lg-6"><div class="card p-4 h-100"><h5 class="fw-semibold mb-3">Top Categories</h5>${review.topCategories.length ? `<div class="list-group list-group-flush">${review.topCategories.map(category => `<div class="list-group-item d-flex justify-content-between gap-3 px-0"><span>${esc(category.category)} <small class="text-muted">(${category.count})</small></span><strong>${money(category.totalCents)}</strong></div>`).join('')}</div>` : '<p class="text-muted mb-0">No expense categories this month.</p>'}</div></div>
+        <div class="col-lg-6"><div class="card p-4 h-100"><h5 class="fw-semibold mb-3">Budget Watch</h5>${review.budgets.length ? review.budgets.map(reviewBudgetRow).join('') : '<p class="text-muted mb-0">No budgets configured yet.</p>'}</div></div>
+        <div class="col-lg-6"><div class="card p-4 h-100"><h5 class="fw-semibold mb-3">Goal Timing</h5>${review.goals.length ? review.goals.map(reviewGoalRow).join('') : '<p class="text-muted mb-0">No goals configured yet.</p>'}</div></div>
+        <div class="col-12"><div class="card p-4"><h5 class="fw-semibold mb-3">Spending Flags</h5>${review.highSpends.length ? `<div class="table-responsive"><table class="table align-middle mb-0"><thead class="table-header"><tr><th>Date</th><th>Category</th><th>Account</th><th>Flag</th><th class="text-end">Amount</th></tr></thead><tbody>${review.highSpends.map(tx => `<tr><td class="text-muted small">${new Date(tx.date).toLocaleDateString()}</td><td>${esc(tx.category)}</td><td>${esc(tx.accountName)}</td><td><span class="badge bg-warning text-dark">${esc(tx.flag)}</span></td><td class="text-end fw-bold text-danger">${money(tx.amountCents)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="text-muted mb-0">No high-spend flags this month.</p>'}</div></div>
+      </div>`;
+  }
+
+  function reviewBudgetRow(budget) {
+    return `<div class="mb-3"><div class="d-flex justify-content-between small"><span>${esc(budget.category)}</span><strong class="${budget.status === 'over' ? 'text-danger' : budget.status === 'warning' ? 'text-warning' : 'text-success'}">${budget.pct}%</strong></div><progress class="w-100" max="100" value="${Math.min(budget.pct, 100)}">${Math.min(budget.pct, 100)}%</progress><p class="text-muted small mb-0">${money(budget.spentCents)} / ${money(budget.limitCents)} ${esc(budget.period)}</p></div>`;
+  }
+
+  function reviewGoalRow(goal) {
+    const eta = goal.estimatedMonths == null ? 'Needs income data' : goal.estimatedMonths === 0 ? 'Ready now' : `${goal.estimatedMonths} month${goal.estimatedMonths === 1 ? '' : 's'}`;
+    return `<div class="mb-3"><div class="d-flex justify-content-between small"><span>${esc(goal.name)}</span><strong>${goal.pct}%</strong></div><progress class="w-100" max="100" value="${goal.pct}">${goal.pct}%</progress><p class="text-muted small mb-0">${money(goal.remainingCents)} remaining · ${esc(eta)}</p></div>`;
   }
 
   async function renderAudit() {

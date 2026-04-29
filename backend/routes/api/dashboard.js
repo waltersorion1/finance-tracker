@@ -6,6 +6,7 @@ const { ensureAuth, wrap } = require('../../middleware/auth');
 const { ensureDefaultGoals } = require('../../utils/defaultData');
 const { serializeAccount, serializeGoal, serializeTransaction } = require('../../utils/serializers');
 const { buildDailyReport } = require('../../utils/reports');
+const { processDueRecurringTransactions } = require('../../services/recurring');
 
 const router = express.Router();
 
@@ -16,6 +17,7 @@ router.get('/', wrap(async (req, res) => {
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+  await processDueRecurringTransactions(req.user, now);
 
   const [accounts, monthlyIncome, monthlyExpense, recentTxs, goals, report] = await Promise.all([
     Account.find({ user: userId }).lean(),
@@ -43,7 +45,7 @@ router.get('/', wrap(async (req, res) => {
     monthlyExpenseCents,
     savingsRate: monthlyIncomeCents > 0 ? Math.max(0, Math.round(((monthlyIncomeCents - monthlyExpenseCents) / monthlyIncomeCents) * 100)) : 0,
     recentTransactions: recentTxs.map(tx => serializeTransaction(tx, req.user.currency)),
-    goals: goals.map(serializeGoal),
+    goals: goals.map(goal => serializeGoal(goal, { monthlyIncomeCents })),
     report,
   });
 }));

@@ -28,10 +28,17 @@ function serializeAccount(account) {
   };
 }
 
-function serializeGoal(goal) {
+function serializeGoal(goal, options = {}) {
   const account = goal.account || null;
   const balanceCents = account?.balanceCents || 0;
   const pct = goal.targetCents > 0 ? Math.min(Math.round((balanceCents / goal.targetCents) * 100), 100) : 0;
+  const monthlyIncomeCents = options.monthlyIncomeCents || 0;
+  const accountPercentage = account?.percentage || 0;
+  const expectedMonthlyContributionCents = Math.floor(monthlyIncomeCents * (accountPercentage / 100));
+  const remainingCents = Math.max(0, goal.targetCents - balanceCents);
+  const estimatedMonths = expectedMonthlyContributionCents > 0
+    ? Math.ceil(remainingCents / expectedMonthlyContributionCents)
+    : null;
   return {
     id: goal._id.toString(),
     name: goal.name,
@@ -42,7 +49,10 @@ function serializeGoal(goal) {
     notes: goal.notes || '',
     account: account ? serializeAccount(account) : null,
     balanceCents,
+    remainingCents,
     pct,
+    expectedMonthlyContributionCents,
+    estimatedMonths,
   };
 }
 
