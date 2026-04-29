@@ -138,8 +138,31 @@ main { flex: 1; }
 .feature-icon { width: 46px; height: 46px; border-radius: .75rem; display: grid; place-items: center; background: rgba(14,165,233,.12); color: var(--primary); font-size: 1.4rem; }
 .command-item { border: 0; border-radius: .5rem; text-align: left; }
 .command-item:hover, .command-item:focus { background: var(--bg); color: var(--primary); }
+.mobile-tabbar {
+  position: sticky;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: .25rem;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: .35rem .45rem;
+  z-index: 1020;
+}
+.mobile-tabbar a {
+  min-height: 48px;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  text-decoration: none;
+  border-radius: .5rem;
+  font-size: .72rem;
+}
+.mobile-tabbar a i { font-size: 1.05rem; line-height: 1; }
+.mobile-tabbar a.active { color: var(--primary); background: rgba(14,165,233,.1); }
 
 @media (max-width: 576px) {
+  body { padding-bottom: 60px; }
   .stat-value { font-size: 1.2rem; }
   .distribution-row { grid-template-columns: 1fr; }
 }

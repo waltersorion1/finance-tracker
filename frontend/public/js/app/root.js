@@ -9,6 +9,7 @@ export function startApp() {
   const app = document.getElementById('app');
   const alerts = document.getElementById('alerts');
   const navLinks = document.getElementById('navLinks');
+  const mobileTabbar = document.getElementById('mobileTabbar');
   const commandPalette = document.getElementById('commandPalette');
   const commandSearch = document.getElementById('commandSearch');
   const commandResults = document.getElementById('commandResults');
@@ -141,7 +142,28 @@ export function startApp() {
     qsa('.nav-link').forEach(link => {
       if (link.pathname === getPath()) link.classList.add('active');
     });
+    renderMobileTabbar();
     syncThemeButtons();
+  }
+
+  function renderMobileTabbar() {
+    if (!currentUser) {
+      mobileTabbar.innerHTML = '';
+      return;
+    }
+
+    const items = [
+      { label: 'Home', icon: 'bi-speedometer2', path: '/dashboard' },
+      { label: 'Spend', icon: 'bi-dash-circle', path: '/transactions/new?type=Expense' },
+      { label: 'History', icon: 'bi-clock-history', path: '/transactions/history' },
+      { label: 'Goals', icon: 'bi-trophy', path: '/goals' },
+      { label: 'Review', icon: 'bi-clipboard-data', path: '/review' },
+    ];
+    const path = getPath();
+    mobileTabbar.innerHTML = items.map(item => {
+      const active = path === item.path.split('?')[0] ? 'active' : '';
+      return `<a class="${active}" href="${item.path}" data-link><i class="bi ${item.icon}"></i><span>${item.label}</span></a>`;
+    }).join('');
   }
 
   function availableCommands() {
