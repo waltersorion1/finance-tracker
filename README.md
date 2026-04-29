@@ -17,6 +17,7 @@ The app is currently designed to run locally on a PC, with a production-friendly
 - User-managed savings goals with goal allocation totals enforced at 100%.
 - Category budgets with weekly or monthly limits.
 - Recurring income and expense templates.
+- Background scheduler for due recurring transactions.
 - Monthly review reports with budget watch, goal timing, and spending flags.
 - Daily spending reports with warnings for overspending and discretionary purchases.
 - Analytics charts for income, expenses, categories, accounts, and goals.
