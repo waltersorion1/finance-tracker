@@ -6,6 +6,7 @@ export const commands = [
   { label: 'Add Income', icon: 'bi-plus-circle', path: '/transactions/new?type=Income', auth: true },
   { label: 'Record Expense', icon: 'bi-dash-circle', path: '/transactions/new?type=Expense', auth: true },
   { label: 'Transaction History', icon: 'bi-clock-history', path: '/transactions/history', auth: true },
+  { label: 'Loans', icon: 'bi-bank2', path: '/loans', auth: true },
   { label: 'Goals', icon: 'bi-trophy', path: '/goals', auth: true },
   { label: 'Budgets', icon: 'bi-cash-coin', path: '/budgets', auth: true },
   { label: 'Recurring Transactions', icon: 'bi-arrow-repeat', path: '/recurring', auth: true },
@@ -24,6 +25,7 @@ export function renderNav({ currentUser, navLinks, mobileTabbar, path, esc }) {
       <li class="nav-item"><a class="nav-link" href="/transactions/new?type=Income" data-link><i class="bi bi-plus-circle me-1 text-success"></i>Income</a></li>
       <li class="nav-item"><a class="nav-link" href="/transactions/new?type=Expense" data-link><i class="bi bi-dash-circle me-1 text-danger"></i>Expense</a></li>
       <li class="nav-item"><a class="nav-link" href="/transactions/history" data-link><i class="bi bi-clock-history me-1"></i>History</a></li>
+      <li class="nav-item"><a class="nav-link" href="/loans" data-link><i class="bi bi-bank2 me-1 text-primary"></i>Loans</a></li>
       <li class="nav-item"><a class="nav-link" href="/goals" data-link><i class="bi bi-trophy me-1 text-warning"></i>Goals</a></li>
       <li class="nav-item"><a class="nav-link" href="/analytics" data-link><i class="bi bi-bar-chart-line me-1"></i>Analytics</a></li>
       <li class="nav-item"><a class="nav-link" href="/budgets" data-link><i class="bi bi-cash-coin me-1"></i>Budgets</a></li>

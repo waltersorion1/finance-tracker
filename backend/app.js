@@ -76,6 +76,7 @@ function mountApi(prefix) {
   app.use(`${prefix}/profile`, require('./routes/api/profile'));
   app.use(`${prefix}/budgets`, require('./routes/api/budgets'));
   app.use(`${prefix}/recurring`, require('./routes/api/recurring'));
+  app.use(`${prefix}/loans`, require('./routes/api/loans'));
   app.use(`${prefix}/audit`, require('./routes/api/audit'));
   app.use(`${prefix}/reviews`, require('./routes/api/reviews'));
 }

@@ -73,4 +73,41 @@ function serializeTransaction(tx, currency = 'XAF') {
   };
 }
 
-module.exports = { serializeUser, serializeAccount, serializeGoal, serializeTransaction };
+function serializeLoan(loan, currency = 'XAF') {
+  const repaidCents = loan.repaidCents || 0;
+  const remainingCents = Math.max(0, (loan.principalCents || 0) - repaidCents);
+  const pctPaid = loan.principalCents > 0 ? Math.min(100, Math.round((repaidCents / loan.principalCents) * 100)) : 0;
+  const repayments = (loan.repayments || []).map(repayment => ({
+    amountCents: repayment.amountCents,
+    date: repayment.date,
+    method: repayment.method || 'other',
+    note: repayment.note || '',
+  }));
+  return {
+    id: loan._id.toString(),
+    type: loan.type,
+    counterparty: loan.counterparty,
+    principalCents: loan.principalCents,
+    repaidCents,
+    remainingCents,
+    pctPaid,
+    status: loan.status,
+    issuedAt: loan.issuedAt,
+    dueAt: loan.dueAt || null,
+    closedAt: loan.closedAt || null,
+    interestRate: loan.interestRate || 0,
+    purpose: loan.purpose || '',
+    notes: loan.notes || '',
+    repayments,
+    displayPrincipal: `${Math.round((loan.principalCents || 0) / 100).toLocaleString()} ${currency}`,
+    displayRemaining: `${Math.round(remainingCents / 100).toLocaleString()} ${currency}`,
+  };
+}
+
+module.exports = {
+  serializeUser,
+  serializeAccount,
+  serializeGoal,
+  serializeTransaction,
+  serializeLoan,
+};

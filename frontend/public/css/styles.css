@@ -56,6 +56,27 @@ main { flex: 1; }
 .nav-link:hover, .nav-link.active { color: var(--primary) !important; background: rgba(14, 165, 233, .08); }
 [data-bs-theme="dark"] .navbar-toggler-icon { filter: invert(1); }
 
+@media (min-width: 992px) {
+  #navLinks {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    row-gap: .35rem;
+  }
+
+  #navLinks .nav-item,
+  #navLinks .nav-link {
+    flex-shrink: 0;
+  }
+
+  #navLinks .nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    white-space: nowrap;
+    line-height: 1.1;
+  }
+}
+
 .footer {
   background: var(--footer-bg);
   border-top: 1px solid var(--border);
@@ -138,6 +159,7 @@ main { flex: 1; }
 .feature-icon { width: 46px; height: 46px; border-radius: .75rem; display: grid; place-items: center; background: rgba(14,165,233,.12); color: var(--primary); font-size: 1.4rem; }
 .command-item { border: 0; border-radius: .5rem; text-align: left; }
 .command-item:hover, .command-item:focus { background: var(--bg); color: var(--primary); }
+.loan-card.loan-borrowed { border-left: 4px solid var(--danger); }
 .mobile-tabbar {
   position: sticky;
   bottom: 0;

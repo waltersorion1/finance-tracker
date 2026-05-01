@@ -6,6 +6,7 @@ import { renderFinanceCharts } from './charts.js';
 import { createComponents } from './components.js';
 import { createCommandPalette, renderNav as renderNavigation } from './navigation.js';
 import { createAuthPages } from './pages/auth.js';
+import { createLoanPages } from './pages/loans.js';
 import { createTransactionPages } from './pages/transactions.js';
 import { createViewHelpers } from './views.js';
 
@@ -60,6 +61,15 @@ export function startApp() {
     pagination,
     ui,
   });
+  const loanPages = createLoanPages({
+    app,
+    api,
+    currentUser: () => currentUser,
+    esc,
+    money,
+    pageTitle,
+    ui,
+  });
 
   const routes = {
     '/': authPages.renderHome,
@@ -68,6 +78,7 @@ export function startApp() {
     '/dashboard': renderDashboard,
     '/transactions/new': transactionPages.renderTransactionForm,
     '/transactions/history': transactionPages.renderHistory,
+    '/loans': loanPages.renderLoans,
     '/goals': renderGoals,
     '/dashboard/goals': renderGoals,
     '/analytics': renderAnalytics,
@@ -193,7 +204,14 @@ export function startApp() {
       <div class="d-flex justify-content-between align-items-center mb-3"><h5 class="fw-semibold mb-0"><i class="bi bi-trophy me-2 text-warning"></i>Goals Progress</h5><a href="/goals" data-link class="btn btn-sm btn-outline-secondary">Manage</a></div>
       <div class="row g-3 mb-5">${data.goals.slice(0, 3).map(goalCard).join('') || ui.empty('No goals yet.')}</div>
       <div class="d-flex justify-content-between align-items-center mb-3"><h5 class="fw-semibold mb-0"><i class="bi bi-clock-history me-2 text-secondary"></i>Recent Transactions</h5><a href="/transactions/history" data-link class="btn btn-sm btn-outline-secondary">View All</a></div>
-      ${transactionList(data.recentTransactions)}`;
+      ${transactionList(data.recentTransactions)}
+      <div class="d-flex justify-content-between align-items-center mt-5 mb-3"><h5 class="fw-semibold mb-0"><i class="bi bi-bank2 me-2 text-primary"></i>Loans Snapshot</h5><a href="/loans" data-link class="btn btn-sm btn-outline-secondary">Manage Loans</a></div>
+      <div class="row g-3">
+        ${ui.stat('Outstanding Debt', money(data.loanSummary?.debtOutstandingCents || 0), 'active loan balance', 'danger')}
+        ${ui.stat('Total Repaid', money(data.loanSummary?.totalRepaidCents || 0), 'all repayments', 'success')}
+        ${ui.stat('Active Loans', `${data.loanSummary?.activeCount || 0}`, `${data.loanSummary?.dueSoonCount || 0} due soon`, 'accent')}
+        ${ui.stat('Overdue', `${data.loanSummary?.overdueCount || 0}`, `${data.loanSummary?.activeCount || 0} active loans`, (data.loanSummary?.overdueCount || 0) ? 'danger' : 'accent')}
+      </div>`;
     showMotivation();
   }
 
@@ -381,6 +399,30 @@ export function startApp() {
       showAlert('Recurring transaction deleted.');
       renderRecurring();
     }
+    if (action === 'delete-loan' && confirm('Delete this loan record?')) {
+      await api(`/api/loans/${event.target.closest('[data-id]').dataset.id}`, { method: 'DELETE' });
+      showAlert('Loan deleted.');
+      loanPages.renderLoans();
+    }
+    if (action === 'loan-fill-repayment') {
+      const button = event.target.closest('[data-id]');
+      const form = app.querySelector('[data-form="loan-repayment"]');
+      if (!button || !form) return;
+      const repayTabTrigger = app.querySelector('[data-bs-target="#loan-repay-pane"]');
+      if (repayTabTrigger) bootstrap.Tab.getOrCreateInstance(repayTabTrigger).show();
+      const loanIdInput = form.querySelector('[name="loanId"]');
+      const amountInput = form.querySelector('[name="amount"]');
+      if (loanIdInput) loanIdInput.value = button.dataset.id;
+      if (amountInput) amountInput.value = (Number(button.dataset.remaining || 0) / 100).toFixed(2);
+      form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    if (action === 'loan-mark-status') {
+      const button = event.target.closest('[data-id]');
+      if (!button) return;
+      await api(`/api/loans/${button.dataset.id}/status`, { method: 'PATCH', body: JSON.stringify({ status: button.dataset.status }) });
+      showAlert('Loan status updated.');
+      loanPages.renderLoans();
+    }
     if (action === 'run-recurring') {
       const result = await api('/api/recurring/run-due', { method: 'POST' });
       showAlert(`${result.processed} recurring transaction${result.processed === 1 ? '' : 's'} processed.`);
@@ -449,6 +491,24 @@ export function startApp() {
         await api('/api/recurring', { method: 'POST', body: JSON.stringify(formData(form)) });
         showAlert('Recurring transaction saved.');
         renderRecurring();
+      }
+      if (name === 'loan') {
+        await api('/api/loans', { method: 'POST', body: JSON.stringify(formData(form)) });
+        showAlert('Loan added.');
+        loanPages.renderLoans();
+      }
+      if (name === 'loan-repayment') {
+        const payload = formData(form);
+        const loanId = payload.loanId;
+        delete payload.loanId;
+        await api(`/api/loans/${loanId}/repayments`, { method: 'POST', body: JSON.stringify(payload) });
+        showAlert('Repayment saved.');
+        loanPages.renderLoans();
+      }
+      if (name === 'loan-filters') {
+        const params = new URLSearchParams(formData(form));
+        [...params.entries()].forEach(([key, value]) => { if (!value) params.delete(key); });
+        navigate(`/loans?${params.toString()}`);
       }
       if (name === 'account-distribution' || name === 'goal-distribution') {
         const collectionName = name === 'account-distribution' ? 'accounts' : 'goals';

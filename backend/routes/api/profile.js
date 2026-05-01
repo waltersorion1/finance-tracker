@@ -5,6 +5,7 @@ const Account = require('../../models/Account');
 const AuditLog = require('../../models/AuditLog');
 const Budget = require('../../models/Budget');
 const Goal = require('../../models/Goal');
+const Loan = require('../../models/Loan');
 const RecurringTransaction = require('../../models/RecurringTransaction');
 const Transaction = require('../../models/Transaction');
 const User = require('../../models/User');
@@ -72,13 +73,14 @@ router.put('/password', [
 
 router.get('/export', wrap(async (req, res) => {
   const userId = req.user._id;
-  const [user, accounts, goals, transactions, budgets, recurring, audit] = await Promise.all([
+  const [user, accounts, goals, transactions, budgets, recurring, loans, audit] = await Promise.all([
     User.findById(userId).lean(),
     Account.find({ user: userId }).lean(),
     Goal.find({ user: userId }).lean(),
     Transaction.find({ user: userId }).lean(),
     Budget.find({ user: userId }).lean(),
     RecurringTransaction.find({ user: userId }).lean(),
+    Loan.find({ user: userId }).lean(),
     AuditLog.find({ user: userId }).sort({ createdAt: -1 }).lean(),
   ]);
 
@@ -90,6 +92,7 @@ router.get('/export', wrap(async (req, res) => {
     transactions,
     budgets,
     recurring,
+    loans,
     audit,
   };
 
@@ -112,6 +115,7 @@ router.delete('/', [
     Transaction.deleteMany({ user: userId }),
     Budget.deleteMany({ user: userId }),
     RecurringTransaction.deleteMany({ user: userId }),
+    Loan.deleteMany({ user: userId }),
     AuditLog.deleteMany({ user: userId }),
   ]);
   await User.deleteOne({ _id: userId });

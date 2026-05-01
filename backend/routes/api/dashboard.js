@@ -2,9 +2,11 @@ const express = require('express');
 const Account = require('../../models/Account');
 const Transaction = require('../../models/Transaction');
 const Goal = require('../../models/Goal');
+const Loan = require('../../models/Loan');
 const { ensureAuth, wrap } = require('../../middleware/auth');
 const { ensureDefaultGoals } = require('../../utils/defaultData');
-const { serializeAccount, serializeGoal, serializeTransaction } = require('../../utils/serializers');
+const { serializeAccount, serializeGoal, serializeLoan, serializeTransaction } = require('../../utils/serializers');
+const { buildLoanSummary } = require('../../utils/loans');
 const { buildDailyReport } = require('../../utils/reports');
 const { processDueRecurringTransactions } = require('../../services/recurring');
 
@@ -19,7 +21,7 @@ router.get('/', wrap(async (req, res) => {
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
   await processDueRecurringTransactions(req.user, now);
 
-  const [accounts, monthlyIncome, monthlyExpense, recentTxs, goals, report] = await Promise.all([
+  const [accounts, monthlyIncome, monthlyExpense, recentTxs, goals, loans, report] = await Promise.all([
     Account.find({ user: userId }).lean(),
     Transaction.aggregate([
       { $match: { user: userId, type: 'Income', date: { $gte: monthStart, $lte: monthEnd } } },
@@ -31,6 +33,7 @@ router.get('/', wrap(async (req, res) => {
     ]),
     Transaction.find({ user: userId }).sort({ date: -1 }).limit(6).populate('account', 'name').lean(),
     Goal.find({ user: userId }).populate('account').lean(),
+    Loan.find({ user: userId, type: 'borrowed' }).sort({ status: 1, dueAt: 1, issuedAt: -1 }).limit(4).lean(),
     buildDailyReport(req.user),
   ]);
 
@@ -46,6 +49,8 @@ router.get('/', wrap(async (req, res) => {
     savingsRate: monthlyIncomeCents > 0 ? Math.max(0, Math.round(((monthlyIncomeCents - monthlyExpenseCents) / monthlyIncomeCents) * 100)) : 0,
     recentTransactions: recentTxs.map(tx => serializeTransaction(tx, req.user.currency)),
     goals: goals.map(goal => serializeGoal(goal, { monthlyIncomeCents })),
+    loanSummary: buildLoanSummary(loans),
+    recentLoans: loans.map(loan => serializeLoan(loan, req.user.currency)),
     report,
   });
 }));
